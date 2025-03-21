@@ -6,7 +6,8 @@ import cors from "cors";
 import mongoose from "mongoose";
 
 // Routers
-import { userRouter } from "./routes/user.routes.js";
+import authRouter from "./routes/auth.routes.js";
+import userRouter from "./routes/user.routes.js";
 
 dotenv.config();
 
@@ -39,11 +40,18 @@ app.get("/", (req, res) => {
 
 // API Routes
 app.use("/api/user", userRouter);
+app.use("/api/auth", authRouter);
 
 // Global error handling
 app.use((err, req, res, next) => {
   console.error(err);
-  res.status(500).send("Seems like we messed up somewhere...");
+  res.status(500).send({
+    status: false,
+    message: "Something went wrong",
+    data: {
+      error: err.message
+    }
+  });
 });
 
 app.listen(PORT, () => console.log(`Server is running on port: ${PORT}`));
