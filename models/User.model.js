@@ -21,7 +21,11 @@ const userSchema = new mongoose.Schema({
     profilePicture: {
         type: String,
         default: ""
-    }
+    },
+    roadmaps: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Roadmap"
+    }]
 }, {
     timestamps: true,
 });

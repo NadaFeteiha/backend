@@ -4,10 +4,13 @@ import helmet from "helmet";
 import dotenv from "dotenv";
 import cors from "cors";
 import mongoose from "mongoose";
+import { ResponseHandler } from "./utils/ResponseHandler.js";
 
 // Routers
 import authRouter from "./routes/auth.routes.js";
 import userRouter from "./routes/user.routes.js";
+import roadmapRouter from "./routes/roadmap.routes.js";
+import topicRouter from "./routes/topic.routes.js";
 
 dotenv.config();
 
@@ -41,17 +44,13 @@ app.get("/", (req, res) => {
 // API Routes
 app.use("/api/user", userRouter);
 app.use("/api/auth", authRouter);
+app.use("/api/roadmap", roadmapRouter);
+app.use("/api/topic", topicRouter);
 
 // Global error handling
 app.use((err, req, res, next) => {
   console.error(err);
-  res.status(500).send({
-    status: false,
-    message: "Something went wrong",
-    data: {
-      error: err.message
-    }
-  });
+  ResponseHandler.error(res, err, 500);
 });
 
 app.listen(PORT, () => console.log(`Server is running on port: ${PORT}`));

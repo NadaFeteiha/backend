@@ -5,7 +5,6 @@ import mongoose from "mongoose";
     for example, if you want to become a back-end developer,
     you need to learn  javascript, node.js, express.js, mongodb, etc.
 */
-
 const roadmapSchema = new mongoose.Schema({
     title: {
         type: String,
@@ -16,14 +15,14 @@ const roadmapSchema = new mongoose.Schema({
         type: String,
         default: "",
     },
-    category: { // Frontend, Backend, DevOps, etc.
+    category: {
         type: String,
-        required: true
+        default: "",
     },
-    tags: {
-        type: [String],
-        required: true
-    },
+    topics: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Topic"
+    }],
     createdAt: {
         type: Date,
         default: Date.now

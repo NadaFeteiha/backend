@@ -16,6 +16,10 @@ const topicSchema = new mongoose.Schema({
         type: String,
         default: "",
     },
+    resources: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Resource"
+    }],
     createdAt: {
         type: Date,
         default: Date.now
