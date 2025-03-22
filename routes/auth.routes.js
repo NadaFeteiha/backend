@@ -2,7 +2,10 @@ import express from "express";
 import { User } from "../models/user.model.js";
 import { ResponseHandler } from "../utils/ResponseHandler.js";
 
-// const ResponseHandler = require("../utils/ResponseHandler.js");
+//TODO: Login using Github or Google
+//TODO: JWT token and encrypt password
+//TODO: Password reset
+
 const authRouter = express.Router();
 
 /**
@@ -11,32 +14,32 @@ const authRouter = express.Router();
  * @param {email, password}
  * 
  */
-authRouter.post("/login", async (req, res) => {
+authRouter.post("/login", async (req, res, next) => {
+    try {
+        if (!req.body.email || !req.body.password) {
+            return ResponseHandler.error(res, "email and password are required", 400);
+        }
 
-    if (!req.body.email || !req.body.password) {
-        ResponseHandler.error(res, "email and password are required", 400);
-    }
+        const user = await User.findOne({ email: req.body.email });
+        if (!user) {
+            return ResponseHandler.error(res, "user not found", 404);
+        }
 
-    const user = await User.findOne({ email: req.body.email });
-    if (!user) {
-        return ResponseHandler.error(res, "user not found", 404);
-    }
+        if (user.password !== req.body.password) {
+            return ResponseHandler.error(res, "invalid password", 401);
+        }
 
-    if (user.password !== req.body.password) {
-        return ResponseHandler.error(res, "invalid password", 401);
-    }
-
-    const result = user.map((user) => {
-        return {
+        const result = {
             id: user.id,
             email: user.email,
-            username: user.username,
+            userName: user.userName,
             name: user.name,
-            profileUrl: user.profileUrl,
-            //TODO: generate token
-        };
-    });
-    ResponseHandler.success(res, result, "login successful", 200);
+            profileUrl: user.profileUrl ? user.profileUrl : "",
+        }
+        ResponseHandler.success(res, result, "login successful", 200);
+    } catch (error) {
+        next(error);
+    }
 });
 
 
@@ -45,37 +48,44 @@ authRouter.post("/login", async (req, res) => {
  * @desc Register a new user
  * @param {email, password}
  */
-authRouter.post("/register", async (req, res) => {
-    const newUser = new User({
-        email: req.body.email,
-        password: req.body.password,
-        username: req.body.username,
-        name: req.body.name,
-    });
+authRouter.post("/register", async (req, res, next) => {
+    try {
+        if (!req.body.email || !req.body.password || !req.body.userName || !req.body.name) {
+            return ResponseHandler.error(res, "email, password, username and name are required", 400);
+        }
 
-    //check if user email or username already exists
-    const user = await User.findOne({ email: req.body.email });
-    if (user) {
-        ResponseHandler.error(res, "email already exists", 400);
-    }
+        const newUser = new User({
+            email: req.body.email,
+            password: req.body.password,
+            userName: req.body.userName,
+            name: req.body.name,
+        });
 
-    const username = await User.findOne({ username: req.body.username });
-    if (username) {
-        ResponseHandler.error(res, "username already exists", 400);
-    }
+        //check if user email or userName already exists
+        const user = await User.findOne({ email: req.body.email });
+        if (user) {
+            return ResponseHandler.error(res, "email already exists");
+        }
 
-    const dbUser = await newUser.save();
-    const result = dbUser.map((user) => {
-        return {
-            id: user.id,
-            email: user.email,
-            username: user.username,
-            name: user.name,
-            profileUrl: user.profileUrl,
+        const userName = await User.findOne({ userName: req.body.userName });
+        if (userName) {
+            return ResponseHandler.error(res, "userName already exists");
+        }
+
+        const dbUser = await newUser.save();
+
+        const result = {
+            id: dbUser.id,
+            email: dbUser.email,
+            userName: dbUser.userName,
+            name: dbUser.name,
+            profileUrl: dbUser.profileUrl ? dbUser.profileUrl : "",
         };
-    })
 
-    ResponseHandler.success(res, result, "user created successfully", 201);
+        ResponseHandler.success(res, result, "user created successfully", 201);
+    } catch (error) {
+        next(error);
+    }
 });
 
 /**
@@ -83,22 +93,49 @@ authRouter.post("/register", async (req, res) => {
  * @desc Forgot password
  * @param {email}
  */
-authRouter.get("/forgot-password", async (req, res) => {
-    if (!req.body.email) {
-        return res.status(400).send("email is required");
-    }
+authRouter.get("/forgot-password", async (req, res, next) => {
+    try {
+        if (!req.body.email) {
+            return ResponseHandler.error(res, "email is required");
+        }
 
-    const user = await User.findOne({ email: req.body.email })
-    if (!user) {
-        return res.status(404).send("user not found");
-    }
+        const user = await User.findOne({ email: req.body.email })
+        if (!user) {
+            return ResponseHandler.error(res, "user not found", 404);
+        }
 
-    //TODO: send password reset link to email
-    res.status(200).send({
-        status: true,
-        message: "password reset link sent to email",
-    });
+        //TODO: send password reset link to email
+        ResponseHandler.success(res, "password reset link sent to email");
+    }
+    catch (error) {
+        next(error);
+    }
 });
 
+//TODO: Reset password with token not Email
+/**
+ * @route PATCH /api/auth/reset-password
+ * @desc Reset password
+ * @param {email, password}
+ */
+authRouter.patch("/reset-password", async (req, res, next) => {
+    try {
+        if (!req.body.password || !req.body.email) {
+            return ResponseHandler.error(res, "password and Email are required");
+        }
+
+        const user = await User.findOneAndUpdate(
+            { email: req.body.email },
+            { password: req.body.password });
+
+        if (!user) {
+            return ResponseHandler.error(res, "user not found", 404);
+        }
+
+        ResponseHandler.success(res, "password reset successful");
+    } catch (error) {
+        next(error);
+    }
+});
 
 export default authRouter;
