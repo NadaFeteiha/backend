@@ -3,7 +3,6 @@ import { Router } from "express";
 import { Topic } from "../models/Topic.model.js";
 import { ResponseHandler } from "../utils/ResponseHandler.js";
 
-
 const topicRouter = new Router();
 
 /**
@@ -26,6 +25,36 @@ topicRouter.get("/", async (req, res, next) => {
     }
 });
 
+
+/**
+ * @route GET /api/topic/filter
+ * @desc Get a topic by language or tags or type
+ */
+topicRouter.get("/filter", async (req, res, next) => {
+    try {
+        const { language, tags, type } = req.query;
+        let query = Topic.find();
+
+        if (language) {
+            query = query.regex("language", new RegExp(language, "i"));
+        }
+
+        if (tags) {
+            query = query.regex("tags", new RegExp(tags, "i"));
+        }
+
+        if (type) {
+            query = query.regex("type", new RegExp(type, "i"));
+        }
+
+        const topics = await query.exec();
+        ResponseHandler.success(res, topics);
+    } catch (err) {
+        next(err);
+    }
+});
+
+
 /**
  * @route POST /api/topic
  * @desc Create a new topic
@@ -35,7 +64,7 @@ topicRouter.post("/", async (req, res, next) => {
         const { title, description } = req.body;
 
         if (!title) {
-            throw new Error("Title is required");
+            ResponseHandler.error(res, "Title is required", 400);
         }
 
         let topic = new Topic({
@@ -50,8 +79,6 @@ topicRouter.post("/", async (req, res, next) => {
     }
 });
 
-
-
 /**
  * @route Patch /api/topic/:id
  * @desc update a topic by id
@@ -60,13 +87,13 @@ topicRouter.patch("/:id", async (req, res, next) => {
     try {
 
         if (req.body.title === undefined && req.body.description === undefined) {
-            throw new Error("Title or description is required");
+            ResponseHandler.error(res, "Title or description is required", 400);
         }
 
         if (req.body.title) {
             const isFound = await Topic.findOne({ title: req.body.title });
             if (isFound) {
-                throw new Error("Title already exists");
+                ResponseHandler.error(res, "Title already exists", 400);
             }
         }
 
@@ -98,7 +125,7 @@ topicRouter.delete("/:id", async (req, res, next) => {
 
         const topic = await Topic.findByIdAndDelete(req.params);
         if (!topic) {
-            throw new Error("Topic not found");
+            ResponseHandler.error(res, "Topic not found", 404);
         }
 
         ResponseHandler.success(res, null, "Topic deleted successfully");

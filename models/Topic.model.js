@@ -12,9 +12,16 @@ const topicSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
-    description: {
+    tags: [{ type: String }],
+    type: {
         type: String,
-        default: "",
+        enum: ["article", "video", "course"],
+        default: "article"
+    },
+    language: {
+        type: String,
+        enum: ["en", "es", "fr", "ar"],
+        default: "en"
     },
     resources: [{
         type: mongoose.Schema.Types.ObjectId,
