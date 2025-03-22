@@ -11,17 +11,27 @@ import { ResponseHandler } from "../utils/ResponseHandler.js";
 
 const userRouter = new Router();
 
+// TODO: get user profile by token
 /**
  * @route GET /api/user/profile
  * @desc Get user profile
  */
-// TODO: get user profile by token
-userRouter.get("/profile/:id", async (req, res) => {
-    const user = await User.findById(req.params.id);
-    if (!user) {
-        return ResponseHandler.error(res, "User not found", 404);
+userRouter.get("/profile/:id", async (req, res, next) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return ResponseHandler.error(res, "User not found", 404);
+        }
+        const result = {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            profilePicture: user.profilePicture,
+        }
+        ResponseHandler.success(res, result, 200);
+    } catch (err) {
+        next(err);
     }
-    ResponseHandler.success(res, user, "User details", 200);
 });
 
 
@@ -29,43 +39,48 @@ userRouter.get("/profile/:id", async (req, res) => {
  * @route Patch /api/user/profile
  * @desc Update user profile picture
  */
-userRouter.patch("/profile/:id", async (req, res) => {
-
-    if (!req.body.profilePicture) {
-        return ResponseHandler.error(res, "Profile picture is required");
-    }
-
-    const newUserDetails = await User.findByIdAndUpdate(
-        req.params.id,
-        { profilePicture: req.body.profilePicture },
-        { new: true });
-
-    if (!newUserDetails) {
-        return ResponseHandler.error(res, "User not found", 404);
-    }
-
-    const result = newUserDetails.map((user) => {
-        return {
-            id: user._id,
-            name: user.name,
-            email: user.email,
-            profilePicture: user.profilePicture,
+userRouter.patch("/profile/:id", async (req, res, next) => {
+    try {
+        if (!req.body.profilePicture) {
+            return ResponseHandler.error(res, "Profile picture is required");
         }
-    });
 
-    ResponseHandler.success(res, result, "Profile picture updated");
+        const newUserDetails = await User.findByIdAndUpdate(
+            req.params.id,
+            { profilePicture: req.body.profilePicture },
+            { new: true });
+
+        if (!newUserDetails) {
+            return ResponseHandler.error(res, "User not found", 404);
+        }
+
+        const result = {
+            id: newUserDetails.id,
+            name: newUserDetails.name,
+            email: newUserDetails.email,
+            profilePicture: newUserDetails.profilePicture,
+        }
+
+        ResponseHandler.success(res, result);
+    } catch (err) {
+        next(err);
+    }
 });
 
 /**
  * @route DELETE /api/user/delete
  * @desc Delete user account
  */
-userRouter.delete("/delete/:id", async (req, res) => {
-    const user = await User.findByIdAndDelete(req.params.id);
-    if (!user) {
-        return ResponseHandler.error(res, "User not found", 404);
+userRouter.delete("/:id", async (req, res) => {
+    try {
+        const user = await User.findByIdAndDelete(req.params.id);
+        if (!user) {
+            return ResponseHandler.error(res, "User not found", 404);
+        }
+        ResponseHandler.success(res, null, "User deleted", 200);
+    } catch (err) {
+        next(err);
     }
-    ResponseHandler.success(res, null, "User deleted", 200);
 });
 
 //TODO: Get users courses 
