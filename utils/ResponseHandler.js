@@ -9,7 +9,7 @@ export class ResponseHandler {
     }
 
     static error(res, message = "An error occurred", statusCode = 400) {
-        return res.status(statusCode).json({
+        return res.status(200/*statusCode*/).json({
             status: false,
             message,
         });

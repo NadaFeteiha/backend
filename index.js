@@ -11,6 +11,7 @@ import authRouter from "./routes/auth.routes.js";
 import userRouter from "./routes/user.routes.js";
 import roadmapRouter from "./routes/roadmap.routes.js";
 import topicRouter from "./routes/topic.routes.js";
+import chatRouter from "./routes/chat.routes.js";
 
 dotenv.config();
 
@@ -46,6 +47,7 @@ app.use("/api/user", userRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/roadmap", roadmapRouter);
 app.use("/api/topic", topicRouter);
+app.use("/api/chat", chatRouter);
 
 // Global error handling
 app.use((err, req, res, next) => {
