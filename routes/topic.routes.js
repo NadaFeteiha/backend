@@ -25,6 +25,24 @@ topicRouter.get("/", async (req, res, next) => {
     }
 });
 
+/**
+ * @route GET /api/topic/:id
+ * @desc Get a topic by id with all resources
+ */
+topicRouter.get("/:id", async (req, res, next) => {
+    try {
+        const topic = await Topic.findById(req.params.id).populate("resources");
+        if (!topic) {
+            return ResponseHandler.error(res, "Topic not found", 404);
+        }
+
+        ResponseHandler.success(res, topic);
+    } catch (err) {
+        next(err);
+    }
+});
+
+
 
 /**
  * @route GET /api/topic/filter

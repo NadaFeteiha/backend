@@ -122,12 +122,30 @@ roadmapRouter.delete("/:id", async (req, res, next) => {
     try {
         const roadmap = await Roadmap.findByIdAndDelete(req.params.id);
         if (!roadmap) {
-            ResponseHandler.error(res, "Roadmap not found", 404);
+            return ResponseHandler.error(res, "Roadmap not found", 404);
         }
         ResponseHandler.success(res, "Roadmap deleted successfully");
     } catch (err) {
         next(err);
     }
 });
+
+/**
+ * @route GET /api/roadmap/:id
+ * @desc Get a roadmap by id With topics
+ */
+
+roadmapRouter.get("/:id", async (req, res, next) => {
+    try {
+        const roadmap = await Roadmap.findById(req.params.id).populate("topics");
+        if (!roadmap) {
+            return ResponseHandler.error(res, "Roadmap not found", 404);
+        }
+        ResponseHandler.success(res, roadmap);
+    } catch (err) {
+        next(err);
+    }
+});
+
 
 export default roadmapRouter;
