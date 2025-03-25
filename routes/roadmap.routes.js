@@ -31,7 +31,18 @@ roadmapRouter.get("/", async (req, res, next) => {
         }
 
         const roadmaps = await query.exec();
-        ResponseHandler.success(res, roadmaps);
+
+        const data = roadmaps.map(roadmap => {
+            return {
+                id: roadmap.id,
+                title: roadmap.title,
+                description: roadmap.description,
+                category: roadmap.category,
+                lastUpdated: roadmap.updatedAt,
+            }
+        });
+
+        ResponseHandler.success(res, data);
     } catch (err) {
         next(err);
     }
@@ -78,23 +89,23 @@ roadmapRouter.post("/", async (req, res, next) => {
 roadmapRouter.patch("/:id", async (req, res, next) => {
     try {
         if (req.body.title === undefined && req.body.description === undefined && req.body.category === undefined) {
-            ResponseHandler.error(res, "Title, description or category is required");
+            return ResponseHandler.error(res, "Title, description or category is required");
         }
 
         const roadmap = await Roadmap.findById(req.params.id);
         if (!roadmap) {
-            ResponseHandler.error(res, "Roadmap not found", 404);
+            return ResponseHandler.error(res, "Roadmap not found", 404);
         }
 
         if (req.body.title) {
             const isFound = await Roadmap.findOne({ title: req.body.title });
             if (isFound) {
-                ResponseHandler.error(res, "Title already exists");
+                return ResponseHandler.error(res, "Title already exists");
             }
         }
 
         const updatedRoadmap = await Roadmap.findOneAndUpdate(
-            { _id: req.params.id },
+            { id: req.params.id },
             req.body,
             { new: true }
         )
@@ -141,11 +152,76 @@ roadmapRouter.get("/:id", async (req, res, next) => {
         if (!roadmap) {
             return ResponseHandler.error(res, "Roadmap not found", 404);
         }
-        ResponseHandler.success(res, roadmap);
+        const data = {
+            id: roadmap.id,
+            title: roadmap.title,
+            description: roadmap.description,
+            category: roadmap.category,
+            topics: roadmap.topics.map(topic => {
+                return {
+                    id: topic.id,
+                    title: topic.title,
+                    description: topic.description,
+                    status: topic.status,
+                    lastUpdated: topic.updatedAt,
+                }
+            }),
+            lastUpdated: roadmap.updatedAt,
+        }
+        ResponseHandler.success(res, data);
     } catch (err) {
         next(err);
     }
 });
 
+/**
+ * @route POST /api/roadmap/:id/topic
+ * @desc Add a topic to a roadmap
+ */
+roadmapRouter.post("/:id/topic", async (req, res, next) => {
+    try {
+        const { topicId } = req.body;
+
+        if (!topicId) {
+            return ResponseHandler.error(res, "Topic id is required");
+        }
+
+        const topic = await Topic.findById(topicId);
+        if (!topic) {
+            return ResponseHandler.error(res, "Topic not found", 404);
+        }
+
+        const roadmap = await Roadmap.findByIdAndUpdate(
+            req.params.id,
+            { $push: { topics: topicId } },
+            { new: true }
+        ).populate("topics");
+
+        if (!roadmap) {
+            return ResponseHandler.error(res, "Roadmap not found", 404);
+        }
+
+        const data = {
+            id: roadmap.id,
+            title: roadmap.title,
+            description: roadmap.description,
+            category: roadmap.category,
+            topics: roadmap.topics.map(topic => {
+                return {
+                    id: topic.id,
+                    title: topic.title,
+                    description: topic.description,
+                    status: topic.status,
+                    lastUpdated: topic.updatedAt,
+                }
+            }),
+            lastUpdated: roadmap.updatedAt,
+        }
+
+        ResponseHandler.success(res, data);
+    } catch (err) {
+        next(err);
+    }
+});
 
 export default roadmapRouter;
