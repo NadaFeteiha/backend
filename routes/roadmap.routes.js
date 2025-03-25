@@ -10,19 +10,17 @@ const roadmapRouter = new Router();
 /**
  * @route GET /api/roadmap
  * @desc Get all roadmaps
- *  or search roadmaps by title or category 
+ *  or search roadmaps by title  
  */
 roadmapRouter.get("/", async (req, res, next) => {
     try {
-        const { title, category } = req.query;
+        const { title } = req.query;
         let query = {};
 
         if (title) {
             query.title = { $regex: title, $options: 'i' };
         }
-        if (category) {
-            query.category = category;
-        }
+
 
         const roadmaps = await Roadmap.find(query);
 
@@ -31,7 +29,6 @@ roadmapRouter.get("/", async (req, res, next) => {
                 id: roadmap.id,
                 title: roadmap.title,
                 description: roadmap.description,
-                category: roadmap.category,
                 lastUpdated: roadmap.updatedAt,
             }
         });
@@ -49,14 +46,42 @@ roadmapRouter.get("/", async (req, res, next) => {
 roadmapRouter.get("/:id", async (req, res, next) => {
     try {
         const roadmap = await Roadmap.findById(req.params.id)
-            .populate("topics")
-            .populate("steps");
+            .populate({
+                path: 'steps',
+                populate: {
+                    path: 'topic',
+                    select: 'title description type resources'
+                },
+                options: { sort: { order: 1 } }
+            });
 
         if (!roadmap) {
             return ResponseHandler.error(res, "Roadmap not found", 404);
         }
 
-        ResponseHandler.success(res, roadmap);
+        const data = {
+            roadmap: {
+                id: roadmap.id,
+                title: roadmap.title,
+                description: roadmap.description,
+                lastUpdated: roadmap.updatedAt,
+                totalSteps: roadmap.steps.length,
+                totalTopics: roadmap.topics.length
+            },
+            steps: roadmap.steps.map(step => ({
+                id: step._id,
+                title: step.title,
+                order: step.order,
+                topic: {
+                    id: step.topic._id,
+                    title: step.topic.title,
+                    description: step.topic.description,
+                    type: step.topic.type,
+                }
+            }))
+        };
+
+        ResponseHandler.success(res, data);
     } catch (err) {
         next(err);
     }
@@ -84,7 +109,6 @@ roadmapRouter.post("/", async (req, res, next) => {
         const roadmap = new Roadmap({
             title,
             description: req.body.description || "",
-            category: req.body.category || "general",
             topics: req.body.topics || [],
             steps: req.body.steps || []
         });
@@ -95,7 +119,6 @@ roadmapRouter.post("/", async (req, res, next) => {
             id: createdRoadmap.id,
             title: createdRoadmap.title,
             description: createdRoadmap.description,
-            category: createdRoadmap.category,
             lastUpdated: createdRoadmap.updatedAt,
             topics: createdRoadmap.topics,
         }
@@ -113,8 +136,8 @@ roadmapRouter.post("/", async (req, res, next) => {
  */
 roadmapRouter.patch("/:id", async (req, res, next) => {
     try {
-        if (req.body.title === undefined && req.body.description === undefined && req.body.category === undefined) {
-            return ResponseHandler.error(res, "Title, description or category is required");
+        if (req.body.title === undefined && req.body.description === undefined) {
+            return ResponseHandler.error(res, "Title, description is required");
         }
 
         const roadmap = await Roadmap.findById(req.params.id);
@@ -138,7 +161,6 @@ roadmapRouter.patch("/:id", async (req, res, next) => {
         const data = {
             title: updatedRoadmap.title,
             description: updatedRoadmap.description,
-            category: updatedRoadmap.category,
             lastUpdated: updatedRoadmap.updatedAt,
         }
 
@@ -198,7 +220,6 @@ roadmapRouter.post("/:id/topic", async (req, res, next) => {
             id: roadmap.id,
             title: roadmap.title,
             description: roadmap.description,
-            category: roadmap.category,
             topics: roadmap.topics.map(topic => {
                 return {
                     id: topic.id,
@@ -294,7 +315,6 @@ roadmapRouter.post("/:id/steps", async (req, res, next) => {
                 id: updatedRoadmap.id,
                 title: updatedRoadmap.title,
                 description: updatedRoadmap.description,
-                category: updatedRoadmap.category,
                 lastUpdated: updatedRoadmap.updatedAt,
             },
             step: {
