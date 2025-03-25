@@ -1,5 +1,5 @@
 import express from "express";
-import { User } from "../models/user.model.js";
+import { User } from "../models/User.model.js";
 import { ResponseHandler } from "../utils/ResponseHandler.js";
 
 //TODO: Login using Github or Google

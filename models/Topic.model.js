@@ -5,36 +5,26 @@ import mongoose from "mongoose";
     for example, if you want to learn javascript, you need to learn
     variables, data types, functions, etc.
 */
-
 const topicSchema = new mongoose.Schema({
     title: {
         type: String,
         required: true,
-        unique: true
+        unique: true,
+        trim: true
     },
-    tags: [{ type: String }],
+    description: {
+        type: String,
+        trim: true
+    },
     type: {
         type: String,
-        enum: ["article", "video", "course"],
-        default: "article"
-    },
-    language: {
-        type: String,
-        enum: ["en", "es", "fr", "ar"],
-        default: "en"
+        enum: ["language", "framework", "tool", "concept", "platform"],
+        default: "language"
     },
     resources: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "Resource"
-    }],
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
-    }
+    }]
 }, {
     timestamps: true
 });

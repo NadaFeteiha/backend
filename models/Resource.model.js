@@ -16,13 +16,18 @@ const resourceSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ["article", "video", "course"],
+        enum: ["article", "video", "course", "documentation", "tutorial", "book"],
         default: "article"
     },
     language: {
         type: String,
         default: "en",
         enum: ["en", "es", "fr", "ar"],
+    },
+    difficulty: {
+        type: String,
+        enum: ["beginner", "intermediate", "advanced"],
+        default: "beginner"
     }
 });
 

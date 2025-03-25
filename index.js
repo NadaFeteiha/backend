@@ -7,12 +7,14 @@ import mongoose from "mongoose";
 import { ResponseHandler } from "./utils/ResponseHandler.js";
 
 // Routers
-import authRouter from "./routes/auth.routes.js";
+
 import userRouter from "./routes/user.routes.js";
-import roadmapRouter from "./routes/roadmap.routes.js";
-import topicRouter from "./routes/topic.routes.js";
+import authRouter from "./routes/auth.routes.js";
 import chatRouter from "./routes/chat.routes.js";
 import resourceRouter from "./routes/resource.routes.js";
+import topicRouter from "./routes/topic.routes.js";
+import roadmapRouter from "./routes/roadmap.routes.js";
+import progressRouter from "./routes/progress.routes.js";
 
 dotenv.config();
 
@@ -46,10 +48,12 @@ app.get("/", (req, res) => {
 // API Routes
 app.use("/api/user", userRouter);
 app.use("/api/auth", authRouter);
-app.use("/api/roadmap", roadmapRouter);
-app.use("/api/topic", topicRouter);
 app.use("/api/chat", chatRouter);
 app.use("/api/resource", resourceRouter);
+app.use("/api/topic", topicRouter);
+app.use("/api/roadmap", roadmapRouter);
+app.use("/api/progress", progressRouter);
+
 
 // Global error handling
 app.use((err, req, res, next) => {

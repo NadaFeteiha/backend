@@ -4,7 +4,6 @@ const userSchema = new mongoose.Schema({
     userName: {
         type: String,
         required: true,
-        unique: true
     },
     email: {
         type: String,
@@ -22,9 +21,18 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
+    role: {
+        type: String,
+        enum: ["user", "admin", "mentor"],
+        default: "user"
+    },
     roadmaps: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "Roadmap"
+    }],
+    progress: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Progress"
     }]
 }, {
     timestamps: true,

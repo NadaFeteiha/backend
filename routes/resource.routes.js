@@ -9,70 +9,102 @@ const resourceRouter = new Router();
 /**
  * @route GET /api/resource
  * @desc Get all resources or search by title
+ * @query title, language, type, topicId
  */
 resourceRouter.get("/", async (req, res, next) => {
     try {
-        const { title } = req.query;
-        let query = Resource.find();
+        const { title, language, type, topicId } = req.query;
+        const query = {};
 
         if (title) {
-            query = query.regex("title", new RegExp(title, "i"));
+            query.title = { $regex: title, $options: 'i' };
         }
 
-        const resources = await query.exec();
-        ResponseHandler.success(res, resources);
-    } catch (err) {
-        next(err);
-    }
-});
-
-/**
- * @route GET /api/resource/filter
- * @desc Get a resource by language or type
- */
-resourceRouter.get("/filter", async (req, res, next) => {
-    try {
-        const { language, type } = req.query;
-        let query = Resource.find();
-
         if (language) {
-            query = query.regex("language", new RegExp(language, "i"));
+            query.language = language;
         }
 
         if (type) {
-            query = query.regex("type", new RegExp(type, "i"));
+            query.type = type;
         }
 
-        const resources = await query.exec();
+        if (topicId) { query.topicId = topicId; }
+
+
+        const resources = await Resource.find(query).exec();
         ResponseHandler.success(res, resources);
     } catch (err) {
         next(err);
     }
 });
 
+/**
+ * @route GET /api/resources/search
+ * @desc Search resources by title with autocomplete support
+ * @query keyword
+ */
+resourceRouter.get("/search", async (req, res, next) => {
+    try {
+        const { keyword } = req.query;
+
+        if (!keyword) {
+            return ResponseHandler.error(res, "Need keyword to search", 400);
+        }
+
+        const resources = await Resource.find({ title: { $regex: q, $options: 'i' } });
+
+        ResponseHandler.success(res, resources);
+    } catch (err) {
+        next(err);
+    }
+});
 
 /**
- * @route POST /api/resource
+ * @route POST /api/resources
  * @desc Create a new resource
+ * @body  title, link, topicId
  */
 resourceRouter.post("/", async (req, res, next) => {
     try {
-        const resource = new Resource(req.body);
+        const { title, link, topicId } = req.body;
 
-        if (!resource.title || !resource.link || !resource.topicId) {
-            return ResponseHandler.error(res, "Title, link and topicId are required");
+        if (!title || !link || !topicId) {
+            return ResponseHandler.error(res, "title, link , topicId are required", 400);
         }
 
-        const topic = await Topic.findById(resource.topicId);
+        // check if topic exists
+        const topic = await Topic.findById(topicId);
         if (!topic) {
-            return ResponseHandler.error(res, "Topic not found");
+            return ResponseHandler.error(res, "Topic already exists", 404);
         }
+
+        // check for duplicate resource
+        const existingResource = await Resource.findOne({ link, topicId });
+        if (existingResource) {
+            return ResponseHandler.error(res, "Resource with this link already exists for the topic", 409);
+        }
+
+        const resource = new Resource({
+            ...req.body,
+            topicId
+        });
 
         const createdResource = await resource.save();
-        topic.resources.push(createdResource._id);
+
+        // Add resource to topic
+        topic.resources.push(createdResource.id);
         await topic.save();
 
-        ResponseHandler.success(res, createdResource, 201);
+        const data = {
+            id: createdResource.id,
+            title: createdResource.title,
+            link: createdResource.link,
+            topic: topic.title,
+            type: createdResource.type,
+            language: createdResource.language
+        };
+
+        ResponseHandler.success(res, data);
     } catch (err) {
         next(err);
     }

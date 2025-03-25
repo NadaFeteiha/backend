@@ -15,13 +15,13 @@ const roadmapSchema = new mongoose.Schema({
         type: String,
         default: "",
     },
-    category: {
-        type: String,
-        default: "",
-    },
     topics: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "Topic"
+    }],
+    steps: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Step"
     }],
     createdAt: {
         type: Date,

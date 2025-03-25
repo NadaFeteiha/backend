@@ -8,17 +8,26 @@ const topicRouter = new Router();
 /**
  * @route GET /api/topic
  * @desc Get all topics or search by title
+ * @query title,type,language
  */
 topicRouter.get("/", async (req, res, next) => {
     try {
-        const { title } = req.query;
-        let query = Topic.find();
+        const { title, type, language } = req.query;
+        let query = {};
 
         if (title) {
-            query = query.regex("title", new RegExp(title, "i"));
+            query.title = { $regex: title, $options: 'i' };
+        }
+        if (type) {
+            query.type = type;
+        }
+        if (language) {
+            query.language = { $regex: language, $options: 'i' };
         }
 
-        const topics = await query.exec();
+        const topics = await Topic.find(query)
+            .populate("resources");
+
         ResponseHandler.success(res, topics);
     } catch (err) {
         next(err);
@@ -31,7 +40,9 @@ topicRouter.get("/", async (req, res, next) => {
  */
 topicRouter.get("/:id", async (req, res, next) => {
     try {
-        const topic = await Topic.findById(req.params.id).populate("resources");
+        const topic = await Topic.findById(req.params.id)
+            .populate("resources");
+
         if (!topic) {
             return ResponseHandler.error(res, "Topic not found", 404);
         }
@@ -42,23 +53,17 @@ topicRouter.get("/:id", async (req, res, next) => {
     }
 });
 
-
-
 /**
  * @route GET /api/topic/filter
- * @desc Get a topic by language or tags or type
+ * @desc Get a topic by language or type
  */
 topicRouter.get("/filter", async (req, res, next) => {
     try {
-        const { language, tags, type } = req.query;
+        const { language, type } = req.query;
         let query = Topic.find();
 
         if (language) {
             query = query.regex("language", new RegExp(language, "i"));
-        }
-
-        if (tags) {
-            query = query.regex("tags", new RegExp(tags, "i"));
         }
 
         if (type) {
@@ -72,66 +77,37 @@ topicRouter.get("/filter", async (req, res, next) => {
     }
 });
 
-
 /**
  * @route POST /api/topic
  * @desc Create a new topic
+ * @body { title, description, type, language }
  */
 topicRouter.post("/", async (req, res, next) => {
     try {
-        const { title, description } = req.body;
+        const { title } = req.body;
 
         if (!title) {
-            ResponseHandler.error(res, "Title is required", 400);
+            return ResponseHandler.error(res, "Title is required", 400);
         }
 
-        let topic = new Topic({
+        const isFoundTopic = await Topic.findOne({ title });
+        if (isFoundTopic) {
+            return ResponseHandler.error(res, "Topic already exists", 409);
+        }
+
+        const topic = new Topic({
             title,
-            description
+            description: req.body.description || "",
+            type: req.body.type || "concept",
+            language: req.body.language || "en"
         });
 
-        topic = await topic.save();
-        ResponseHandler.success(res, topic);
+        const createdTopic = await topic.save();
+        ResponseHandler.success(res, createdTopic);
     } catch (err) {
         next(err);
     }
 });
-
-/**
- * @route Patch /api/topic/:id
- * @desc update a topic by id
- */
-topicRouter.patch("/:id", async (req, res, next) => {
-    try {
-
-        if (req.body.title === undefined && req.body.description === undefined) {
-            ResponseHandler.error(res, "Title or description is required", 400);
-        }
-
-        if (req.body.title) {
-            const isFound = await Topic.findOne({ title: req.body.title });
-            if (isFound) {
-                ResponseHandler.error(res, "Title already exists", 400);
-            }
-        }
-
-        const topic = await Topic.findOneAndUpdate(
-            { _id: req.params.id },
-            req.body,
-            { new: true }
-        )
-
-        const data = {
-            title: topic.title,
-            description: topic.description,
-            lastUpdated: topic.updatedAt,
-        }
-        ResponseHandler.success(res, data);
-    } catch (err) {
-        next(err);
-    }
-});
-
 
 //TODO: admin or mentor only can delete a topic
 /**
@@ -140,10 +116,9 @@ topicRouter.patch("/:id", async (req, res, next) => {
  */
 topicRouter.delete("/:id", async (req, res, next) => {
     try {
-
         const topic = await Topic.findByIdAndDelete(req.params);
         if (!topic) {
-            ResponseHandler.error(res, "Topic not found", 404);
+            return ResponseHandler.error(res, "Topic not found", 404);
         }
 
         ResponseHandler.success(res, null, "Topic deleted successfully");
