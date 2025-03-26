@@ -35,7 +35,18 @@ userRouter.get("/profile/:id", async (req, res, next) => {
             return ResponseHandler.error(res, "User not found", 404);
         }
 
-        ResponseHandler.success(res, user, 200);
+        const result = {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            userName: user.userName,
+            role: user.role,
+            profilePicture: user.profilePicture,
+            roadmaps: user.roadmaps,
+            progress: user.progress
+        }
+
+        ResponseHandler.success(res, result, 200);
     } catch (err) {
         next(err);
     }
@@ -48,14 +59,33 @@ userRouter.get("/profile/:id", async (req, res, next) => {
  */
 userRouter.patch("/profile/:id", async (req, res, next) => {
     try {
-        if (!req.body.profilePicture) {
-            return ResponseHandler.error(res, "Profile picture is required");
+        const { profilePicture, name } = req.body;
+        console.log("backend user profile update");
+        console.log(req.body);
+        if (!profilePicture && !name) {
+            return ResponseHandler.error(res, "Profile picture or name is required");
+        }
+
+        const updateData = {};
+        if (profilePicture) {
+            updateData.profilePicture = profilePicture;
+        }
+        if (name) {
+            updateData.name = name;
         }
 
         const newUserDetails = await User.findByIdAndUpdate(
             req.params.id,
-            { profilePicture: req.body.profilePicture },
-            { new: true });
+            updateData,
+            { new: true }
+        ).populate("roadmaps")
+            .populate({
+                path: 'progress',
+                populate: {
+                    path: 'roadmap',
+                    select: 'title'
+                }
+            });
 
         if (!newUserDetails) {
             return ResponseHandler.error(res, "User not found", 404);
@@ -65,9 +95,12 @@ userRouter.patch("/profile/:id", async (req, res, next) => {
             id: newUserDetails.id,
             name: newUserDetails.name,
             email: newUserDetails.email,
+            userName: newUserDetails.userName,
+            role: newUserDetails.role,
             profilePicture: newUserDetails.profilePicture,
+            roadmaps: newUserDetails.roadmaps,
+            progress: newUserDetails.progress
         }
-
         ResponseHandler.success(res, result);
     } catch (err) {
         next(err);
