@@ -34,6 +34,34 @@ topicRouter.get("/", async (req, res, next) => {
     }
 });
 
+
+//TODO: refactor to be depend on number of users are activly studying this topic
+/**
+ * @route GET /api/topic/popular
+ * @desc Get num or 5 most popular topics
+ */
+topicRouter.get("/popular", async (req, res, next) => {
+    try {
+        const num = req.query.n || 5;
+        const topics = await Topic.find().limit(num);
+
+        const data = topics.map(topic => {
+            return {
+                id: topic.id,
+                title: topic.title,
+                description: topic.description,
+            }
+        });
+
+        console.log("popular topics");
+        console.log(data);
+        ResponseHandler.success(res, data);
+    } catch (err) {
+        next(err);
+    }
+});
+
+
 /**
  * @route GET /api/topic/:id
  * @desc Get a topic by id with all resources
