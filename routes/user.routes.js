@@ -19,16 +19,26 @@ const userRouter = new Router();
  * @route GET /api/user/profile
  * @desc Get user profile
  */
+
 userRouter.get("/profile/:id", async (req, res, next) => {
     try {
         const user = await User.findById(req.params.id)
-            .populate("roadmaps")
             .populate({
                 path: 'progress',
-                populate: {
-                    path: 'roadmap',
-                    select: 'title'
-                }
+                populate: [
+                    {
+                        path: 'roadmap',
+                    },
+                    {
+                        path: 'completedSteps.step',
+                        select: 'title order topic',
+
+                    },
+                    {
+                        path: 'currentStep',
+                        select: 'title order topic',
+                    }
+                ]
             });
 
         if (!user) {
@@ -36,17 +46,38 @@ userRouter.get("/profile/:id", async (req, res, next) => {
         }
 
         const result = {
-            id: user.id,
+            id: user._id,
             name: user.name,
             email: user.email,
             userName: user.userName,
             role: user.role,
-            profilePicture: user.profilePicture,
-            roadmaps: user.roadmaps,
-            progress: user.progress
-        }
+            profilePicture: user.profilePicture || null,
+            roadmaps: user.progress.map((progress) => {
+                const totalSteps = progress.roadmap.steps.length;
+                const completedCount = progress.completedSteps.length;
+                return {
+                    id: progress.roadmap._id,
+                    title: progress.roadmap.title,
+                    description: progress.roadmap.description,
+                    currentStep: progress.currentStep ? {
+                        id: progress.currentStep._id,
+                        title: progress.currentStep.title,
+                        order: progress.currentStep.order,
+                    } : null,
+                    completedSteps: progress.completedSteps.map((step) => ({
+                        id: step.step._id,
+                        title: step.step.title,
+                        order: step.step.order,
+                    })),
+                    totalSteps: totalSteps,
+                    completedCount: completedCount,
+                    startedAt: progress.startedAt,
+                    lastActive: progress.lastActive
+                };
+            })
+        };
 
-        ResponseHandler.success(res, result, 200);
+        ResponseHandler.success(res, result, "User profile retrieved successfully", 200);
     } catch (err) {
         next(err);
     }
@@ -78,14 +109,7 @@ userRouter.patch("/profile/:id", async (req, res, next) => {
             req.params.id,
             updateData,
             { new: true }
-        ).populate("roadmaps")
-            .populate({
-                path: 'progress',
-                populate: {
-                    path: 'roadmap',
-                    select: 'title'
-                }
-            });
+        );
 
         if (!newUserDetails) {
             return ResponseHandler.error(res, "User not found", 404);
@@ -98,8 +122,6 @@ userRouter.patch("/profile/:id", async (req, res, next) => {
             userName: newUserDetails.userName,
             role: newUserDetails.role,
             profilePicture: newUserDetails.profilePicture,
-            roadmaps: newUserDetails.roadmaps,
-            progress: newUserDetails.progress
         }
         ResponseHandler.success(res, result);
     } catch (err) {
