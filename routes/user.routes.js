@@ -171,4 +171,67 @@ userRouter.get("/:id/roadmaps", async (req, res, next) => {
 });
 
 
+/**
+ * @route GET /api/user/:id/roadmap/:roadmapId
+ * @desc Check if user is in a roadmap
+ */
+userRouter.get("/:id/roadmap/:roadmapId", async (req, res, next) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return ResponseHandler.error(res, "User not found");
+        }
+
+        const roadmap = await Roadmap.findById(req.params.roadmapId);
+        if (!roadmap) {
+            return ResponseHandler.error(res, "Roadmap not found");
+        }
+
+        const inRoadmap = user.roadmaps.includes(req.params.roadmapId);
+        ResponseHandler.success(res, { inRoadmap });
+    } catch (err) {
+        next(err);
+    }
+});
+
+
+/**
+ * @route POST /api/user/:id/roadmap/:roadmapId
+ * @desc Add user to a roadmap
+ */
+userRouter.post("/:id/roadmap/:roadmapId", async (req, res, next) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return ResponseHandler.error(res, "User not found");
+        }
+
+        const roadmap = await Roadmap.findById(req.params.roadmapId);
+        if (!roadmap) {
+            return ResponseHandler.error(res, "Roadmap not found");
+        }
+
+        user.roadmaps.push(req.params.roadmapId);
+        await user.save();
+
+        const progress = new Progress({
+            user: user.id,
+            roadmap: roadmap.id,
+            startedAt: new Date(),
+            lastActive: new Date(),
+        });
+        await progress.save();
+
+        const data = {
+            roadmaps: user.roadmaps,
+            success: true
+        }
+
+        ResponseHandler.success(res, data, "User added to roadmap successfully");
+    } catch (err) {
+        next(err);
+    }
+});
+
+
 export default userRouter;
