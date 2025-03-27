@@ -21,12 +21,11 @@ dotenv.config();
 // Connect to MongoDB
 await mongoose
   .connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
     serverSelectionTimeoutMS: 30000
   })
-  .then(() => console.log("Connected to MongoDB"))
-  .catch((e) => console.error(e));
+  .then(() => console.log(`Connected to MongoDB${process.env.MONGODB_URI}`))
+  .catch((e) => console.error(e))
+  .finally(() => console.log(`process.env.MONGODB_URI`));
 
 const PORT = process.env.PORT || 4000;
 
