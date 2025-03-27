@@ -21,40 +21,13 @@ This is the backend service for the Roadmap Learning Platform, a web-based platf
 
 ## Installation
 
-### Prerequisites
-
-- Node.js (v16 or higher)
-- MongoDB Atlas account or local MongoDB instance
-- Git
-
 ### Setup Instructions
 
-1. Clone the repository:
-
-   ```bash
-   git clone <repo-url>
-   cd Capstone
-   ```
-
-2. Install dependencies:
-
-   ```bash
-   npm install
-   ```
-
-3. Configure environment variables:
-   Create a `.env` file in the root directory with the following:
-
-   ```env
-   MONGODB_URI=<your-mongodb-connection-string>
-   PORT=4000
-   JWT_SECRET=<your-jwt-secret-key>
-   ```
-
-4. Start the development server:
-   ```bash
-   npm run dev
-   ```
+1. Clone the repo `git clone <repo-url> <new-project-name>`
+2. cd into your new project folder and run `npm i`
+3. Remove previous git repo: `rm -rf .git`
+4. Create a new `.env` file and add the `MONGODB_URI`
+5. Run the app with: `npm run dev`
 
 ## API Endpoints
 
@@ -89,13 +62,3 @@ backend/
 ├── app.js             # Main application file
 └── package.json       # Project dependencies
 ```
-
-## Instructions
-
-1. Clone the repo `git clone <repo-url> <new-project-name>`
-2. cd into your new project folder and run `npm i`
-3. Remove previous git repo: `rm -rf .git`
-4. Create a new `.env` file and add the `MONGODB_URI`
-5. Run the app with: `npm run dev`
-
-
