@@ -90,16 +90,12 @@ backend/
 └── package.json       # Project dependencies
 ```
 
-## Development
+## Instructions
 
-To run in development mode:
+1. Clone the repo `git clone <repo-url> <new-project-name>`
+2. cd into your new project folder and run `npm i`
+3. Remove previous git repo: `rm -rf .git`
+4. Create a new `.env` file and add the `MONGODB_URI`
+5. Run the app with: `npm run dev`
 
-```bash
-npm run dev
-```
 
-To run in production mode:
-
-```bash
-npm start
-```
