@@ -101,29 +101,6 @@ userRouter.get("/profile/:id", async (req, res, next) => {
             role: user.role,
             profilePicture: user.profilePicture || null,
             roadmaps: final,
-            /*user.progress.map((progress) => {
-               const totalSteps = progress.roadmap.steps.length;
-               const completedCount = progress.completedSteps.length;
-               return {
-                   id: progress.roadmap._id,
-                   title: progress.roadmap.title,
-                   description: progress.roadmap.description,
-                   currentStep: progress.currentStep ? {
-                       id: progress.currentStep._id,
-                       title: progress.currentStep.title,
-                       order: progress.currentStep.order,
-                   } : null,
-                   completedSteps: progress.completedSteps.map((step) => ({
-                       id: step.step._id,
-                       title: step.step.title,
-                       order: step.step.order,
-                   })),
-                   totalSteps: totalSteps,
-                   completedCount: completedCount,
-                   startedAt: progress.startedAt,
-                   lastActive: progress.lastActive
-               };
-           })*/
         };
 
         ResponseHandler.success(res, result, "User profile retrieved successfully", 200);

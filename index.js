@@ -20,7 +20,11 @@ dotenv.config();
 
 // Connect to MongoDB
 await mongoose
-  .connect(process.env.MONGODB_URI)
+  .connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 30000
+  })
   .then(() => console.log("Connected to MongoDB"))
   .catch((e) => console.error(e));
 
