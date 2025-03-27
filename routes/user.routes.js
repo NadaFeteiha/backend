@@ -45,6 +45,54 @@ userRouter.get("/profile/:id", async (req, res, next) => {
             return ResponseHandler.error(res, "User not found", 404);
         }
 
+        const roadmaps = user.progress.map((progress) => {
+            const totalSteps = progress.roadmap.steps.length;
+            const completedCount = progress.completedSteps.length;
+            return {
+                id: progress.roadmap._id,
+                title: progress.roadmap.title,
+                description: progress.roadmap.description,
+                currentStep: progress.currentStep ? {
+                    id: progress.currentStep._id,
+                    title: progress.currentStep.title,
+                    order: progress.currentStep.order,
+                } : null,
+                completedSteps: progress.completedSteps.map((step) => ({
+                    id: step.step._id,
+                    title: step.step.title,
+                    order: step.step.order,
+                })),
+                totalSteps: totalSteps,
+                completedCount: completedCount,
+                startedAt: progress.startedAt,
+                lastActive: progress.lastActive
+            };
+        });
+
+        console.log("========= >user here");
+        const test = await User.findById(req.params.id).populate("roadmaps");
+        const test2 = test.roadmaps;
+        const otherRoadmaps = test2.filter((roadmap) => {
+            return !user.progress.some((progress) => progress.roadmap._id.equals(roadmap._id));
+        }).map((roadmap) => {
+            return {
+                id: roadmap._id,
+                title: roadmap.title,
+                description: roadmap.description,
+                currentStep: null,
+                completedSteps: [],
+                totalSteps: 0,
+                completedCount: 0,
+                startedAt: null,
+                lastActive: null
+            }
+        });
+        console.log("========= >end other roadmaps");
+        const final = roadmaps.concat(otherRoadmaps);
+        console.log(final);
+        console.log("========= >user roadmaps");
+
+
         const result = {
             id: user._id,
             name: user.name,
@@ -52,29 +100,30 @@ userRouter.get("/profile/:id", async (req, res, next) => {
             userName: user.userName,
             role: user.role,
             profilePicture: user.profilePicture || null,
-            roadmaps: user.progress.map((progress) => {
-                const totalSteps = progress.roadmap.steps.length;
-                const completedCount = progress.completedSteps.length;
-                return {
-                    id: progress.roadmap._id,
-                    title: progress.roadmap.title,
-                    description: progress.roadmap.description,
-                    currentStep: progress.currentStep ? {
-                        id: progress.currentStep._id,
-                        title: progress.currentStep.title,
-                        order: progress.currentStep.order,
-                    } : null,
-                    completedSteps: progress.completedSteps.map((step) => ({
-                        id: step.step._id,
-                        title: step.step.title,
-                        order: step.step.order,
-                    })),
-                    totalSteps: totalSteps,
-                    completedCount: completedCount,
-                    startedAt: progress.startedAt,
-                    lastActive: progress.lastActive
-                };
-            })
+            roadmaps: final,
+            /*user.progress.map((progress) => {
+               const totalSteps = progress.roadmap.steps.length;
+               const completedCount = progress.completedSteps.length;
+               return {
+                   id: progress.roadmap._id,
+                   title: progress.roadmap.title,
+                   description: progress.roadmap.description,
+                   currentStep: progress.currentStep ? {
+                       id: progress.currentStep._id,
+                       title: progress.currentStep.title,
+                       order: progress.currentStep.order,
+                   } : null,
+                   completedSteps: progress.completedSteps.map((step) => ({
+                       id: step.step._id,
+                       title: step.step.title,
+                       order: step.step.order,
+                   })),
+                   totalSteps: totalSteps,
+                   completedCount: completedCount,
+                   startedAt: progress.startedAt,
+                   lastActive: progress.lastActive
+               };
+           })*/
         };
 
         ResponseHandler.success(res, result, "User profile retrieved successfully", 200);
@@ -147,6 +196,37 @@ userRouter.delete("/:id", async (req, res) => {
     }
 });
 
+
+userRouter.delete("/:id/roadmap/:roadmapId", async (req, res, next) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return ResponseHandler.error(res, "User not found");
+        }
+
+        const roadmap = await Roadmap.findById(req.params.roadmapId);
+        if (!roadmap) {
+            return ResponseHandler.error(res, "Roadmap not found");
+        }
+
+        const index = user.roadmaps.indexOf(req.params.roadmapId);
+        if (index === -1) {
+            return ResponseHandler.error(res, "User not in this roadmap");
+        }
+
+        user.roadmaps.splice(index, 1);
+        await user.save();
+
+        const data = {
+            roadmaps: user.roadmaps,
+            success: true
+        }
+
+        ResponseHandler.success(res, data, "User removed from roadmap successfully");
+    } catch (err) {
+        next(err);
+    }
+});
 
 /**
  * @route GET /api/user/:id/roadmaps
