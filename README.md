@@ -17,7 +17,6 @@ This is the backend service for the Roadmap Learning Platform, a web-based platf
 - **MongoDB**: NoSQL database for storing application data
 - **Mongoose**: ODM library for MongoDB
 - **dotenv**: For managing environment variables
-- **JWT**: For secure user authentication
 
 ## Installation
 
