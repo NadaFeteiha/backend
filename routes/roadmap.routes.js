@@ -7,6 +7,24 @@ import { Step } from "../models/Step.model.js";
 
 const roadmapRouter = new Router();
 
+roadmapRouter.get("/simple", async (req, res, next) => {
+    try {
+
+        const roadmaps = await Roadmap.find();
+        const data = roadmaps.map(roadmap => {
+            return {
+                id: roadmap.id,
+                title: roadmap.title,
+                description: roadmap.description,
+            }
+        });
+
+        ResponseHandler.success(res, data);
+    } catch (err) {
+        next(err);
+    }
+});
+
 /**
  * @route GET /api/roadmap
  * @desc Get all roadmaps
